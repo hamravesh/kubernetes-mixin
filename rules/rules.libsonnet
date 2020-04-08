@@ -7,7 +7,7 @@
           {
             record: 'namespace:container_cpu_usage_seconds_total:sum_rate',
             expr: |||
-              sum(rate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])) by (namespace)
+              sum(rate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])) by (cluster, namespace)
             ||| % $._config,
           },
           {
@@ -16,7 +16,7 @@
             // quantile_over_time(...) which would otherwise not be possible.
             record: 'namespace_pod_container:container_cpu_usage_seconds_total:sum_rate',
             expr: |||
-              sum by (namespace, pod, container) (
+              sum by (cluster, namespace, pod, container) (
                 rate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])
               )
             ||| % $._config,
@@ -24,15 +24,15 @@
           {
             record: 'namespace:container_memory_usage_bytes:sum',
             expr: |||
-              sum(container_memory_usage_bytes{%(cadvisorSelector)s, image!="", container!="POD"}) by (namespace)
+              sum(container_memory_usage_bytes{%(cadvisorSelector)s, image!="", container!="POD"}) by (cluster, namespace)
             ||| % $._config,
           },
           {
             record: 'namespace:kube_pod_container_resource_requests_memory_bytes:sum',
             expr: |||
-              sum by (namespace, label_name) (
-                  sum(kube_pod_container_resource_requests_memory_bytes{%(kubeStateMetricsSelector)s} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"^(Pending|Running)$"} == 1)) by (namespace, pod)
-                * on (namespace, pod)
+              sum by (cluster, namespace, label_name) (
+                  sum(kube_pod_container_resource_requests_memory_bytes{%(kubeStateMetricsSelector)s} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"^(Pending|Running)$"} == 1)) by (cluster, namespace, pod)
+                * on (cluster, namespace, pod)
                   group_left(label_name) kube_pod_labels{%(kubeStateMetricsSelector)s}
               )
             ||| % $._config,
@@ -40,9 +40,9 @@
           {
             record: 'namespace:kube_pod_container_resource_requests_cpu_cores:sum',
             expr: |||
-              sum by (namespace, label_name) (
-                  sum(kube_pod_container_resource_requests_cpu_cores{%(kubeStateMetricsSelector)s} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"^(Pending|Running)$"} == 1)) by (namespace, pod)
-                * on (namespace, pod)
+              sum by (cluster, namespace, label_name) (
+                  sum(kube_pod_container_resource_requests_cpu_cores{%(kubeStateMetricsSelector)s} * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~"^(Pending|Running)$"} == 1)) by (cluster, namespace, pod)
+                * on (cluster, namespace, pod)
                   group_left(label_name) kube_pod_labels{%(kubeStateMetricsSelector)s}
               )
             ||| % $._config,
@@ -56,10 +56,10 @@
                   label_replace(
                     kube_pod_owner{%(kubeStateMetricsSelector)s, owner_kind="ReplicaSet"},
                     "replicaset", "$1", "owner_name", "(.*)"
-                  ) * on(replicaset, namespace) group_left(owner_name) kube_replicaset_owner{%(kubeStateMetricsSelector)s},
+                  ) * on(cluster, replicaset, namespace) group_left(owner_name) kube_replicaset_owner{%(kubeStateMetricsSelector)s},
                   "workload", "$1", "owner_name", "(.*)"
                 )
-              ) by (namespace, workload, pod)
+              ) by (cluster, namespace, workload, pod)
             ||| % $._config,
             labels: {
               workload_type: 'deployment',
@@ -73,7 +73,7 @@
                   kube_pod_owner{%(kubeStateMetricsSelector)s, owner_kind="DaemonSet"},
                   "workload", "$1", "owner_name", "(.*)"
                 )
-              ) by (namespace, workload, pod)
+              ) by (cluster, namespace, workload, pod)
             ||| % $._config,
             labels: {
               workload_type: 'daemonset',
@@ -87,7 +87,7 @@
                   kube_pod_owner{%(kubeStateMetricsSelector)s, owner_kind="StatefulSet"},
                   "workload", "$1", "owner_name", "(.*)"
                 )
-              ) by (namespace, workload, pod)
+              ) by (cluster, namespace, workload, pod)
             ||| % $._config,
             labels: {
               workload_type: 'statefulset',
