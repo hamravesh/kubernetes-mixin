@@ -16,6 +16,14 @@
             ||| % $._config,
           },
           {
+            record: 'namespace_pod_container:container_cpu_usage_seconds_total:sum_rate',
+            expr: |||
+              sum by (%(clusterLabel)s, namespace, pod, container) (
+                rate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])
+              )
+            ||| % $._config,
+          },
+          {
             // Reduces cardinality of this timeseries by #cores, which makes it
             // more useable in dashboards.  Also, allows us to do things like
             // quantile_over_time(...) which would otherwise not be possible.
