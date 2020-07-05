@@ -12,14 +12,14 @@
           {
             record: 'namespace:container_cpu_usage_seconds_total:sum_rate',
             expr: |||
-              sum(rate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])) by (%(clusterLabel)s, namespace)
+              sum(irate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])) by (%(clusterLabel)s, namespace)
             ||| % $._config,
           },
           {
             record: 'namespace_pod_container:container_cpu_usage_seconds_total:sum_rate',
             expr: |||
               sum by (%(clusterLabel)s, namespace, pod, container) (
-                rate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])
+                irate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])
               )
             ||| % $._config,
           },
@@ -30,7 +30,7 @@
             record: 'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate',
             expr: |||
               sum by (%(clusterLabel)s, namespace, pod, container) (
-                rate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])
+                irate(container_cpu_usage_seconds_total{%(cadvisorSelector)s, image!="", container!="POD"}[5m])
               ) * on (%(clusterLabel)s, namespace, pod) group_left(node) topk by (%(clusterLabel)s, namespace, pod) (
                 1, max by(%(clusterLabel)s, namespace, pod, node) (kube_pod_info{node!=""})
               )
